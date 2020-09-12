@@ -19,5 +19,4 @@ int main(int argc, char *argv[]){
     printf("Total Elapsed Time: %Lf microseconds\n", time);
     printf("Average Time Per Syscall: %Lf microseconds\n", (time/100000));
 	return 0;
-
 }
