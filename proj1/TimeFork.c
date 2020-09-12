@@ -21,9 +21,9 @@ int main(int argc, char *argv[]){
     gettimeofday(&newtv, NULL);
 	
     time = (newtv.tv_sec - oldtv.tv_sec) * 1000000 + (newtv.tv_usec - oldtv.tv_usec);
-    printf("Syscalls Performed: 5000\n");
+    printf("Forks Performed: 5000\n");
     printf("Total Elapsed Time: %Lf microseconds\n", time);
-    printf("Average Time Per Syscall: %Lf microseconds\n", (time/5000));
+    printf("Average Time Per Fork: %Lf microseconds\n", (time/5000));
 	return 0;
 
 }
