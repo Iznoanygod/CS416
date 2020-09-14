@@ -29,7 +29,10 @@ void handle_sigfpe(int signum){
 int main(int argc, char *argv[]){
     gettimeofday(&oldtv, NULL);
     signal(SIGFPE, handle_sigfpe);
-    int foo = 1 / 0;
-	return 0;
+    int x = 1;
+    int y = 0;
+    int z = 1;
+    z = x / y;
+	return z;
 
 }
