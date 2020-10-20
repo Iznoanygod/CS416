@@ -6,7 +6,6 @@
 
 #include "mypthread.h"
 #include "queue.h"
-#include <valgrind/valgrind.h>
 
 // INITAILIZE ALL YOUR VARIABLES HERE
 // YOUR CODE HERE
@@ -62,7 +61,6 @@ int mypthread_create(mypthread_t * thread, pthread_attr_t * attr,
     threadBlock->context.uc_link = NULL;
     threadBlock->context.uc_stack.ss_sp = malloc(SIGSTKSZ);
     threadBlock->context.uc_stack.ss_size = SIGSTKSZ;
-    VALGRIND_STACK_REGISTER(threadBlock->context.uc_stack.ss_sp, threadBlock->context.uc_stack.ss_sp + SIGSTKSZ);
     makecontext(&(threadBlock->context), (void*) function, 1, arg); 
 
     if(mSet){
