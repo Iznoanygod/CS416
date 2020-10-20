@@ -34,6 +34,8 @@ void enqueue(PQueue** queue, threadControlBlock* block, int quantum){
 }
 threadControlBlock* dequeue(PQueue** queue){
     PQueue* front = *queue;
+    if(front == NULL)
+        return NULL;
     if(front->control->status == RUNNABLE){
         *queue = front->next;
         threadControlBlock* block = front->control;
@@ -52,4 +54,24 @@ threadControlBlock* dequeue(PQueue** queue){
     threadControlBlock* block = lead->control;
     free(lead);
     return block;
+}
+void updateQueueRunnable(PQueue** queue, mypthread_t waiting){
+    PQueue *temp = *queue;
+    while(temp != NULL){
+        if(temp->control->waiting == waiting && temp->control->status == SLEEP){
+            temp->control->waiting = -1;
+            temp->control->status = RUNNABLE;
+        }
+        temp = temp->next;
+    }
+    return;
+}
+int checkIfFinished(PQueue** queue, mypthread_t waiting){
+    PQueue* temp = *queue;
+    while(temp != NULL){
+        if(temp->control->tid == waiting &&temp->control->status == FINISHED)
+            return 1;
+        temp = temp->next;
+    }
+    return 0;
 }

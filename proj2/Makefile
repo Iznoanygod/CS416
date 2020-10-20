@@ -11,7 +11,7 @@ queue.o:
 	$(CC) $(CFLAGS) queue.c -o queue.o
 
 mypthread.a: mypthread.o
-	$(AR) libmypthread.a mypthread.o
+	$(AR) libmypthread.a mypthread.o queue.o
 	$(RANLIB) libmypthread.a
 
 mypthread.o: mypthread.h

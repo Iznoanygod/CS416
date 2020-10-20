@@ -10,4 +10,6 @@ typedef struct PQueue{
 }PQueue;
 void enqueue(PQueue** queue, threadControlBlock* block, int quantum);
 threadControlBlock* dequeue(PQueue** queue);
+void updateQueueRunnable(PQueue** queue, mypthread_t waiting);
+int checkIfFinished(PQueue** queue, mypthread_t waiting);
 #endif

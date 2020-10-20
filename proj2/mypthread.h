@@ -40,12 +40,18 @@ typedef struct threadControlBlock {
     status_t status;
     ucontext_t context;
     int quantum;
-    struct threadControlBlock* waiting;
+    mypthread_t waiting;
 } threadControlBlock;
+
+typedef struct tcbList {
+    struct tcbList* next;
+    threadControlBlock* block;
+}tcbList;
 
 /* mutex struct definition */
 typedef struct mypthread_mutex_t {
-    
+    tcbList* waiting;
+    char lock;
 } mypthread_mutex_t;
 
 /* define your data structures here: */
