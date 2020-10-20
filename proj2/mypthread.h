@@ -18,26 +18,34 @@
 #include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ucontext.h>
+#include <signal.h>
+#include <string.h>
+#include <sys/time.h>
+
+#define MAX_THREADS 100
+#define TIME_QUANTUM 20000
 
 typedef uint mypthread_t;
 
-typedef struct threadControlBlock {
-	/* add important states in a thread control block */
-	// thread Id
-	// thread status
-	// thread context
-	// thread stack
-	// thread priority
-	// And more ...
+typedef enum threadStatus {
+    RUNNABLE,
+    SLEEP,
+    FINISHED,
+    UNINITIALIZED
+} status_t;
 
-	// YOUR CODE HERE
-} tcb;
+typedef struct threadControlBlock {
+    mypthread_t tid;
+    status_t status;
+    ucontext_t context;
+    int quantum;
+    struct threadControlBlock* waiting;
+} threadControlBlock;
 
 /* mutex struct definition */
 typedef struct mypthread_mutex_t {
-	/* add something here */
-
-	// YOUR CODE HERE
+    
 } mypthread_mutex_t;
 
 /* define your data structures here: */

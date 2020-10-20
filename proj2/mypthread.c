@@ -5,50 +5,81 @@
 // iLab Server:
 
 #include "mypthread.h"
+#include "queue.h"
 
 // INITAILIZE ALL YOUR VARIABLES HERE
 // YOUR CODE HERE
+PQueue* ThreadQueue = NULL;
+static unsigned int newTID = 0;
+static mypthread_t currentThread;
+static threadControlBlock* runningBlock;
 
+static void schedule();
+static void sched_stcf();
 
 /* create a new thread */
 int mypthread_create(mypthread_t * thread, pthread_attr_t * attr,
                       void *(*function)(void*), void * arg) {
-       // create Thread Control Block
-       // create and initialize the context of this thread
-       // allocate space of stack for this thread to run
-       // after everything is all set, push this thread int
-       // YOUR CODE HERE
+    int mSet = 0;
+    if(!newTID){
+        currentThread = newTID;
+        threadControlBlock* mainBlock = malloc(sizeof(threadControlBlock));
+        mainBlock->tid = currentThread;
+        mainBlock->waiting = NULL;
+        runningBlock = mainBlock;
+        newTID++;
+        mainBlock->status = RUNNABLE;
+        mainBlock->quantum = 0;
+        mSet = 1;
+        
+        struct sigaction action;
+        struct itimerval timer;
 
-    return 0;
-};
+        memset(&action, 0, sizeof(action));
+        action.sa_handler = &schedule;
+        sigaction(SIGPROF, &action, NULL);
+
+        timer.it_value.tv_sec = 0;
+        timer.it_value.tv_usec = TIME_QUANTUM;
+
+        timer.it_interval.tv_sec = 0;
+        timer.it_interval.tv_usec = TIME_QUANTUM;
+
+        setitimer(ITIMER_PROF, &timer, NULL);
+    }
+
+    currentThread = newTID;
+    threadControlBlock* threadBlock = malloc(sizeof(threadControlBlock));
+    threadBlock->tid = newTID;
+    threadBlock->waiting = NULL;
+    *thread = newTID;
+    newTID++;
+    threadBlock->status = RUNNABLE;
+    enqueue(&ThreadQueue, threadBlock, 0);
+    getcontext(&(threadBlock->context));
+    threadBlock->context.uc_link = NULL;
+    threadBlock->context.uc_stack.ss_sp = malloc(SIGSTKSZ);
+    threadBlock->context.uc_stack.ss_size = SIGSTKSZ;
+    makecontext(&(threadBlock->context), (void*) function, 1, arg);
+    
+
+    if(mSet){
+        getcontext(&(runningBlock->context));
+    }
+};  
 
 /* give CPU possession to other user-level threads voluntarily */
 int mypthread_yield() {
-
-	// change thread state from Running to Ready
-	// save context of this thread to its thread control block
-	// wwitch from thread context to scheduler context
-
-	// YOUR CODE HERE
-	return 0;
+    schedule();
 };
 
 /* terminate a thread */
 void mypthread_exit(void *value_ptr) {
-	// Deallocated any dynamic memory created when starting this thread
-
-	// YOUR CODE HERE
 };
 
 
 /* Wait for thread termination */
 int mypthread_join(mypthread_t thread, void **value_ptr) {
-
-	// wait for a specific thread to terminate
-	// de-allocate any dynamic memory created by the joining thread
-
-	// YOUR CODE HERE
-	return 0;
 };
 
 /* initialize the mutex lock */
@@ -108,6 +139,7 @@ static void schedule() {
 // schedule policy
 #ifndef MLFQ
 	// Choose STCF
+    sched_stcf();
 #else
 	// Choose MLFQ
 #endif
@@ -116,18 +148,27 @@ static void schedule() {
 
 /* Preemptive SJF (STCF) scheduling algorithm */
 static void sched_stcf() {
-	// Your own implementation of STCF
-	// (feel free to modify arguments and return types)
+    signal(SIGPROF, SIG_IGN);
+    threadControlBlock* prevThread = runningBlock;
+    runningBlock = dequeue(&ThreadQueue);
+    
+    struct sigaction action;
+    struct itimerval timer;
 
-	// YOUR CODE HERE
-}
+    memset(&action, 0, sizeof(action));
+    action.sa_handler = &schedule;
+    sigaction(SIGPROF, &action, NULL);
 
-/* Preemptive MLFQ scheduling algorithm */
-static void sched_mlfq() {
-	// Your own implementation of MLFQ
-	// (feel free to modify arguments and return types)
+    timer.it_value.tv_sec = 0;
+    timer.it_value.tv_usec = TIME_QUANTUM;
 
-	// YOUR CODE HERE
+    timer.it_interval.tv_sec = 0;
+    timer.it_interval.tv_usec = TIME_QUANTUM;
+    setitimer(ITIMER_PROF, &timer, NULL);
+
+    ucontext_t currContext;
+    getcontext(&currContext);
+    swapcontext(&(prevThread->context), &(runningBlock->context));
 }
 
 // Feel free to add any other functions you need

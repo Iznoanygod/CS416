@@ -5,7 +5,10 @@ RANLIB = ranlib
 
 SCHED = PSJF
 
-all: mypthread.a
+all: queue.o mypthread.a
+
+queue.o:
+	$(CC) $(CFLAGS) queue.c -o queue.o
 
 mypthread.a: mypthread.o
 	$(AR) libmypthread.a mypthread.o

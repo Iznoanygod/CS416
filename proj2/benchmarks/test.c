@@ -10,9 +10,16 @@
  * You can modify and use this program as much as possible.
  * This will not be graded.
  */
-int main(int argc, char **argv) {
+void thingy(void* arg){
+    printf("hello\n");
+    mypthread_exit(NULL);
 
-	/* Implement HERE */
+}
+int main(int argc, char **argv) {
+    mypthread_t * thread = malloc(sizeof(mypthread_t));
+    mypthread_create(thread, NULL, *thingy, NULL);
 
 	return 0;
+
 }
+
