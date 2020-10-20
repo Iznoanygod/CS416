@@ -2,23 +2,24 @@
 #include <unistd.h>
 #include <pthread.h>
 #include "../mypthread.h"
+pthread_mutex_t mutex;
+void idle(){
+    printf("EXIT\n");
+    mypthread_mutex_lock(&mutex);
 
-/* A scratch program template on which to call and
- * test mypthread library functions as you implement
- * them.
- *
- * You can modify and use this program as much as possible.
- * This will not be graded.
- */
-void thingy(void* arg){
-    printf("hello\n");
-    mypthread_exit(NULL);
-}
-int main(int argc, char **argv) {
-    mypthread_t * thread = malloc(sizeof(mypthread_t));
-    mypthread_create(thread, NULL, *thingy, NULL);
-    mypthread_join(*thread, NULL);
-	free(thread);
-    printf("Finished\n");
+    mypthread_mutex_unlock(&mutex);
+    mypthread_exit(4);
 }
 
+int main(){
+    int returnv;
+    mypthread_mutex_init(&mutex, NULL);
+    mypthread_t thread;
+    mypthread_create(&thread, NULL, &idle, NULL);
+    printf("Joining\n");
+    mypthread_mutex_lock(&mutex);
+    mypthread_yield();
+    mypthread_mutex_unlock(&mutex);
+    mypthread_join(thread, &returnv);
+    printf("%d\n", returnv);
+}

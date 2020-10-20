@@ -22,6 +22,7 @@
 #include <signal.h>
 #include <string.h>
 #include <sys/time.h>
+#include <stdatomic.h>
 
 #define MAX_THREADS 100
 #define TIME_QUANTUM 20000
@@ -41,6 +42,8 @@ typedef struct threadControlBlock {
     ucontext_t context;
     int quantum;
     mypthread_t waiting;
+    void** value_ptr;
+    void* retval;
 } threadControlBlock;
 
 typedef struct tcbList {
@@ -51,7 +54,7 @@ typedef struct tcbList {
 /* mutex struct definition */
 typedef struct mypthread_mutex_t {
     tcbList* waiting;
-    char lock;
+    int lock;
 } mypthread_mutex_t;
 
 /* define your data structures here: */
@@ -87,6 +90,8 @@ int mypthread_mutex_unlock(mypthread_mutex_t *mutex);
 
 /* destroy the mutex */
 int mypthread_mutex_destroy(mypthread_mutex_t *mutex);
+
+void mainThreadAdd();
 
 #ifdef USE_MYTHREAD
 #define pthread_t mypthread_t

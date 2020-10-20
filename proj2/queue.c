@@ -75,3 +75,14 @@ int checkIfFinished(PQueue** queue, mypthread_t waiting){
     }
     return 0;
 }
+threadControlBlock* getBlock(PQueue** queue, mypthread_t tid){
+    PQueue* temp = *queue;
+    while(temp != NULL){
+        if(temp->control->tid == tid)
+            return temp->control;
+        temp = temp->next;
+
+    }
+    return NULL;
+}
+

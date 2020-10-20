@@ -6,6 +6,7 @@
 
 #include "mypthread.h"
 #include "queue.h"
+#include <valgrind/valgrind.h>
 
 // INITAILIZE ALL YOUR VARIABLES HERE
 // YOUR CODE HERE
@@ -22,7 +23,7 @@ int mypthread_create(mypthread_t * thread, pthread_attr_t * attr,
                       void *(*function)(void*), void * arg) {
     int mSet = 0;
     if(!newTID){
-        currentThread = newTID;
+        /*currentThread = newTID;
         threadControlBlock* mainBlock = malloc(sizeof(threadControlBlock));
         mainBlock->tid = currentThread;
         mainBlock->waiting = -1;
@@ -30,6 +31,8 @@ int mypthread_create(mypthread_t * thread, pthread_attr_t * attr,
         newTID++;
         mainBlock->status = RUNNABLE;
         mainBlock->quantum = 0;
+        mainBlock->value_ptr = NULL;
+        mainBlock->retval = NULL;
         mSet = 1;
         
         struct sigaction action;
@@ -46,6 +49,9 @@ int mypthread_create(mypthread_t * thread, pthread_attr_t * attr,
         timer.it_interval.tv_usec = TIME_QUANTUM;
 
         setitimer(ITIMER_PROF, &timer, NULL);
+    */
+        mainThreadAdd();
+        mSet = 1;
     }
 
     currentThread = newTID;
@@ -53,6 +59,8 @@ int mypthread_create(mypthread_t * thread, pthread_attr_t * attr,
     threadBlock->tid = newTID;
     threadBlock->waiting = -1;
     threadBlock->quantum = 0;
+    threadBlock->value_ptr = NULL;
+    threadBlock->retval = NULL;
     *thread = newTID;
     newTID++;
     threadBlock->status = RUNNABLE;
@@ -61,12 +69,42 @@ int mypthread_create(mypthread_t * thread, pthread_attr_t * attr,
     threadBlock->context.uc_link = NULL;
     threadBlock->context.uc_stack.ss_sp = malloc(SIGSTKSZ);
     threadBlock->context.uc_stack.ss_size = SIGSTKSZ;
+    VALGRIND_STACK_REGISTER(threadBlock->context.uc_stack.ss_sp, threadBlock->context.uc_stack.ss_sp + SIGSTKSZ);
     makecontext(&(threadBlock->context), (void*) function, 1, arg); 
 
-    if(mSet){
+    /*if(mSet){
         getcontext(&(runningBlock->context));
-    }
+    }*/
 };  
+
+void mainThreadAdd(){
+    currentThread = newTID;
+    threadControlBlock* mainBlock = malloc(sizeof(threadControlBlock));
+    mainBlock->tid = currentThread;
+    mainBlock->waiting = -1;
+    runningBlock = mainBlock;
+    newTID++;
+    mainBlock->status = RUNNABLE;
+    mainBlock->quantum = 0;
+    mainBlock->value_ptr = NULL;
+    mainBlock->retval = NULL;
+        
+    struct sigaction action;
+    struct itimerval timer;
+
+    memset(&action, 0, sizeof(struct sigaction));
+    action.sa_handler = &schedule;
+    sigaction(SIGPROF, &action, NULL);
+
+    timer.it_value.tv_sec = 0;
+    timer.it_value.tv_usec = TIME_QUANTUM;
+
+    timer.it_interval.tv_sec = 0;
+    timer.it_interval.tv_usec = TIME_QUANTUM;
+
+    setitimer(ITIMER_PROF, &timer, NULL);
+    getcontext(&(runningBlock->context));
+}
 
 /* give CPU possession to other user-level threads voluntarily */
 int mypthread_yield() {
@@ -76,6 +114,12 @@ int mypthread_yield() {
 /* terminate a thread */
 void mypthread_exit(void *value_ptr) {
     runningBlock->status = FINISHED;
+    if(runningBlock->value_ptr != NULL){
+        *runningBlock->value_ptr = value_ptr;
+    }
+    else{
+        runningBlock->retval = value_ptr;
+    }
     updateQueueRunnable(&ThreadQueue, runningBlock->tid);
     schedule();
 };
@@ -83,10 +127,16 @@ void mypthread_exit(void *value_ptr) {
 
 /* Wait for thread termination */
 int mypthread_join(mypthread_t thread, void **value_ptr) {
-    if(checkIfFinished(&ThreadQueue, thread))
+    if(checkIfFinished(&ThreadQueue, thread)){
+        threadControlBlock* block = getBlock(&ThreadQueue, thread);
+        if(value_ptr != NULL)
+            *value_ptr = block->retval;
         return 0;
+    }
     runningBlock->status = SLEEP;
     runningBlock->waiting = thread;
+    threadControlBlock* block = getBlock(&ThreadQueue, thread);
+    block->value_ptr = value_ptr;
     schedule();
 };
 
@@ -94,7 +144,9 @@ int mypthread_join(mypthread_t thread, void **value_ptr) {
 int mypthread_mutex_init(mypthread_mutex_t *mutex,
                           const pthread_mutexattr_t *mutexattr) {
 	//initialize data structures for this mutex
-
+    if(!newTID){
+        mainThreadAdd();
+    }
     mutex->waiting = NULL;
     mutex->lock = 0;
 	
@@ -107,19 +159,13 @@ int mypthread_mutex_lock(mypthread_mutex_t *mutex) {
         // if the mutex is acquired successfully, enter the critical section
         // if acquiring mutex fails, push current thread into block list and //
         // context switch to the scheduler thread
-    while(1){
-        if(mutex->lock == 0){
-            mutex->lock = 1;
-            return 0;
-        }
-        else{
-            runningBlock->status = SLEEP;
-            tcbList* temp = malloc(sizeof(temp));
-            temp->next = mutex->waiting;
-            temp->block = runningBlock;
-            mutex->waiting = temp;
-            schedule();
-        }
+    while(atomic_flag_test_and_set(&(mutex->lock))){
+        runningBlock->status = SLEEP;
+        tcbList* temp = malloc(sizeof(tcbList));
+        temp->next = mutex->waiting;
+        temp->block = runningBlock;
+        mutex->waiting = temp;
+        schedule();
     }
     return 0;
 };
