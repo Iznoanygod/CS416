@@ -34,23 +34,23 @@ void external_calculate(void* arg) {
 		sprintf(a, "%d", k);
 		strcat(path, a);
 
-		FILE *f;
-		f = fopen(path, "r");
-		if (!f) {
-			printf("failed to open file %s, please run ./genRecord.sh first\n", path);
-			exit(0);
-		}
+		//FILE *f;
+		//f = fopen(path, "r");
+		//if (!f) {
+		//	printf("failed to open file %s, please run ./genRecord.sh first\n", path);
+		//	exit(0);
+		//}
 
 		for (i = 0; i < itr; ++i) {
 			// read 16B from nth record into memory from mem[n*4]
 			for (j = 0; j < 4; ++j) {
-				fscanf(f, "%d", &mem[k*4 + j]);
+				//fscanf(f, "%d", &mem[k*4 + j]);
 				pthread_mutex_lock(&mutex);
-				sum += mem[k*4 + j];
+				//sum += mem[k*4 + j];
 				pthread_mutex_unlock(&mutex);
 			}
 		}
-		fclose(f);
+		//fclose(f);
 	}
 
 	pthread_exit(NULL);
@@ -142,7 +142,7 @@ int main(int argc, char **argv) {
 	pthread_mutex_destroy(&mutex);
 
 	// feel free to verify your answer here:
-	verify();
+	//verify();
 	
 	free(mem);
 	free(thread);

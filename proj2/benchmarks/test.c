@@ -13,13 +13,12 @@
 void thingy(void* arg){
     printf("hello\n");
     mypthread_exit(NULL);
-
 }
 int main(int argc, char **argv) {
     mypthread_t * thread = malloc(sizeof(mypthread_t));
     mypthread_create(thread, NULL, *thingy, NULL);
-
-	return 0;
-
+    mypthread_join(*thread, NULL);
+	free(thread);
+    printf("Finished\n");
 }
 
