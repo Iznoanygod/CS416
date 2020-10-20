@@ -33,7 +33,7 @@ typedef enum threadStatus {
     RUNNABLE,
     SLEEP,
     FINISHED,
-    UNINITIALIZED
+    CLEANUP
 } status_t;
 
 typedef struct threadControlBlock {

@@ -13,4 +13,5 @@ threadControlBlock* dequeue(PQueue** queue);
 void updateQueueRunnable(PQueue** queue, mypthread_t waiting);
 int checkIfFinished(PQueue** queue, mypthread_t waiting);
 threadControlBlock* getBlock(PQueue** queue, mypthread_t tid);
+void cleanup(PQueue** queue);
 #endif

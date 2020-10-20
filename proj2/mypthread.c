@@ -15,6 +15,8 @@ static unsigned int newTID = 0;
 static mypthread_t currentThread;
 static threadControlBlock* runningBlock;
 
+void exitCleanup(void);
+
 static void schedule();
 static void sched_stcf();
 
@@ -78,6 +80,7 @@ int mypthread_create(mypthread_t * thread, pthread_attr_t * attr,
 };  
 
 void mainThreadAdd(){
+    atexit(exitCleanup);
     currentThread = newTID;
     threadControlBlock* mainBlock = malloc(sizeof(threadControlBlock));
     mainBlock->tid = currentThread;
@@ -116,6 +119,7 @@ void mypthread_exit(void *value_ptr) {
     runningBlock->status = FINISHED;
     if(runningBlock->value_ptr != NULL){
         *runningBlock->value_ptr = value_ptr;
+        runningBlock->status = CLEANUP;
     }
     else{
         runningBlock->retval = value_ptr;
@@ -129,8 +133,10 @@ void mypthread_exit(void *value_ptr) {
 int mypthread_join(mypthread_t thread, void **value_ptr) {
     if(checkIfFinished(&ThreadQueue, thread)){
         threadControlBlock* block = getBlock(&ThreadQueue, thread);
-        if(value_ptr != NULL)
+        if(value_ptr != NULL){
+            block->status = CLEANUP;
             *value_ptr = block->retval;
+        }
         return 0;
     }
     runningBlock->status = SLEEP;
@@ -224,6 +230,7 @@ static void schedule() {
 
 /* Preemptive SJF (STCF) scheduling algorithm */
 static void sched_stcf() {
+    cleanup(&ThreadQueue);
     signal(SIGPROF, SIG_IGN);
     
     threadControlBlock* prevThread = runningBlock;
@@ -249,6 +256,18 @@ static void sched_stcf() {
     setitimer(ITIMER_PROF, &timer, NULL);
 
     swapcontext(&(prevThread->context), &(runningBlock->context));
+}
+
+void exitCleanup(void){
+    PQueue* Li = ThreadQueue;
+    while(Li != NULL){
+        PQueue* temp = Li;
+        Li = Li->next;
+        free(temp->control->context.uc_stack.ss_sp);
+        free(temp->control);
+        free(temp);
+    }
+    free(runningBlock);
 }
 
 // Feel free to add any other functions you need

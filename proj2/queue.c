@@ -86,3 +86,26 @@ threadControlBlock* getBlock(PQueue** queue, mypthread_t tid){
     return NULL;
 }
 
+void cleanup(PQueue** queue){
+    PQueue* trail = *queue;
+    PQueue* lead = trail->next;
+    while(lead != NULL){
+        if(lead->control->status == CLEANUP){
+            trail->next = lead->next;
+            free(lead->control->context.uc_stack.ss_sp);
+            free(lead->control);
+            free(lead);
+            lead = trail->next;
+            continue;
+        }
+        trail = lead;
+        lead = lead->next;
+    }
+    trail = *queue;
+    if(trail->control->status == CLEANUP){
+        *queue = trail->next;
+        free(trail->control->context.uc_stack.ss_sp);
+        free(trail->control);
+        free(trail);
+    }
+}
