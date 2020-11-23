@@ -190,6 +190,18 @@ void myfree(void *va, int size) {
     //Free the page table entries starting from this virtual address (va)
     // Also mark the pages free in the bitmap
     //Only free if the memory from "va" to va+size is valid
+    pte_t* paddr = Translate(NULL, va);
+
+    int frees = (phys_addr - (unsigned int)physical_memory)/PGSIZE;
+    int nfrees = size / PGSIZE + 1;
+    for(int i = frees, int j = 0; j < nfrees; i++,j++){
+        vpage_states[frees] = 0;
+    }
+
+    int addr = (unsigned long int)paddr;
+    int i = bitMasK(addr, 10, 23);
+    int j = bitMask(addr, 10, 13);
+    page_dir[i][j] = 0;
 }
 
 
