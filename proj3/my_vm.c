@@ -27,8 +27,8 @@ void SetPhysicalMem() {
     //virtual and physical bitmaps and initialize them
     
     physical_memory = mmap(0, MEMSIZE, PROT_READ|PROT_WRITE, MAP_PRIVATE, -1, 0);
-    ppage_states = mmapp(0, physical_pages, PROT_READ|PROT_WRITE, MAP_PRIVATE,-1,0);
-    vpgage_states = mmap(0, virtual_pages, PROT_READ|PROT_WRITE, MAP_PRIVATE, -1, 0);
+    ppage_states = mmap(0, physical_pages, PROT_READ|PROT_WRITE, MAP_PRIVATE,-1,0);
+    vpage_states = mmap(0, virtual_pages, PROT_READ|PROT_WRITE, MAP_PRIVATE, -1, 0);
     for(int i = 0; i < physical_pages; i++){
         ppage_states[i] = 0;
     }
@@ -90,11 +90,11 @@ pte_t * Translate(pde_t *pgdir, void *va) {
     //2nd-level-page table index using the virtual address.  Using the page
     //directory index and page table index get the physical address
     
-    uintptr_t addr = va;
+    uintptr_t addr = (uintptr_t) va;
     int i = bitMask(addr, 10, 23);
     int j = bitMask(addr, 10, 13);
     pde_t* retv = pagedir[i][j];
-    return retVal;
+    return retv;
 
     //If translation not successfull
     return NULL;
@@ -113,8 +113,8 @@ int PageMap(pde_t *pgdir, void *va, void *pa)
     /*HINT: Similar to Translate(), find the page directory (1st level)
     and page table (2nd-level) indices. If no mapping exists, set the
     virtual to physical mapping */
-    uintptr_t i = pgdir;
-    uintptr_t j = va;
+    uintptr_t i = (uintptr_t)pgdir;
+    uintptr_t j = (uintptr_t)va;
     if(pagedir[i][j] == NULL)
         pagedir[i][j] = pa;
     else{
@@ -160,7 +160,7 @@ void *myalloc(unsigned int num_bytes) {
         printf("Can not find next page\n");
         exit(1);
     }
-    for(int i = next_page, int j = 0; j < pages_needed; i++,j++){
+    for(int i = nextp, j = 0; j < pages_needed; i++,j++){
         vpage_states[i] = 1;
     }
     uintptr_t addr = (unsigned int)physical_memory + PGSIZE *nextp;
@@ -168,8 +168,8 @@ void *myalloc(unsigned int num_bytes) {
     int i = bitMask(addr, 10, 23);
     int j = bitMask(addr, 10, 13);
     
-    if(page_dir[i][j] == NULL){
-        page_dir[i][j] = (unsigned long int*) addr;
+    if(pagedir[i][j] == NULL){
+        pagedir[i][j] = (unsigned long int*) addr;
     }
     else{
         printf("Mapping already exists, maybe a prior mapping");
@@ -192,16 +192,16 @@ void myfree(void *va, int size) {
     //Only free if the memory from "va" to va+size is valid
     pte_t* paddr = Translate(NULL, va);
 
-    int frees = (phys_addr - (unsigned int)physical_memory)/PGSIZE;
+    int frees = ((int)paddr - (unsigned int)physical_memory)/PGSIZE;
     int nfrees = size / PGSIZE + 1;
-    for(int i = frees, int j = 0; j < nfrees; i++,j++){
+    for(int i = frees, j = 0; j < nfrees; i++,j++){
         vpage_states[frees] = 0;
     }
 
     int addr = (unsigned long int)paddr;
-    int i = bitMasK(addr, 10, 23);
+    int i = bitMask(addr, 10, 23);
     int j = bitMask(addr, 10, 13);
-    page_dir[i][j] = 0;
+    pagedir[i][j] = 0;
 }
 
 
