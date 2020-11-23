@@ -214,11 +214,12 @@ void PutVal(void *va, void *val, int size) {
        the contents of "val" to a physical page. NOTE: The "size" value can be larger
        than one page. Therefore, you may have to find multiple pages using Translate()
        function.*/
-
-    for(int i = 0; i < size / MEMSIZE; i++){
+    pte_t* paddr = Translate(NULL, va);
+    memcpy(paddr, val, size);
+    /*for(int i = 0; i < size / MEMSIZE; i++){
         pte_t* paddr = Translate(NULL, va+i);
         memcpy(paddr,val+i, MEMSIZE);
-    }
+    }*/
 
 }
 
@@ -230,10 +231,12 @@ void GetVal(void *va, void *val, int size) {
     "val" address. Assume you can access "val" directly by derefencing them.
     If you are implementing TLB,  always check first the presence of translation
     in TLB before proceeding forward */
-    for(int i = 0; i < size / MEMSIZE; i++){
+    pte_t* paddr = Translate(NULL, va);
+    memcpy(val, paddr, size);
+    /*for(int i = 0; i < size / MEMSIZE; i++){
         pte_t* paddr = Translate(NULL, va+i);
         memcpy(val+i, paddr, MEMSIZE);
-    }
+    }*/
 
 }
 
