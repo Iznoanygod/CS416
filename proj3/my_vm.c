@@ -216,7 +216,7 @@ void PutVal(void *va, void *val, int size) {
        function.*/
     pte_t* paddr = Translate(NULL, va);
     memcpy(paddr, val, size);
-    /*for(int i = 0; i < size / MEMSIZE; i++){
+    /*for(int i = 0; i < (size > MEMSIZE ? (size/MEMSIZE):1); i++){
         pte_t* paddr = Translate(NULL, va+i);
         memcpy(paddr,val+i, MEMSIZE);
     }*/
@@ -233,7 +233,7 @@ void GetVal(void *va, void *val, int size) {
     in TLB before proceeding forward */
     pte_t* paddr = Translate(NULL, va);
     memcpy(val, paddr, size);
-    /*for(int i = 0; i < size / MEMSIZE; i++){
+    /*for(int i = 0; i < (size > MEMSIZE ? (size / MEMSIZE):1); i++){
         pte_t* paddr = Translate(NULL, va+i);
         memcpy(val+i, paddr, MEMSIZE);
     }*/
@@ -271,15 +271,16 @@ void MatMult(void *mat1, void *mat2, int size, void *answer) {
     for(int i = 0; i < size; i++){
         for(int j =0; j < size; j++){
             for(int k = 0; k < size; k++){
-                int n1 = M[i*size*k];
-                int n2 = N[i*size+j];
+                int n1 = M[i*size+k];
+                int n2 = N[k*size+j];
                 RES[i*size+j] += n1*n2;
             }
         }
     }
+    printf("didnt break yet\n");
     for(int i = 0; i < size; i++){
         for(int j = 0; j < size; j++){
-            int n1 = (unsigned int) RES + ((i * size * sizeof(int))) + (j * sizeof(int));
+            int n1 = (unsigned int) answer + ((i * size * sizeof(int))) + (j * sizeof(int));
             PutVal((void*)n1, (void*)&RES[i*size+j], sizeof(int));
         }
     }
