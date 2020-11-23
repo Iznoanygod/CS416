@@ -26,9 +26,9 @@ void SetPhysicalMem() {
     //HINT: Also calculate the number of physical and virtual pages and allocate
     //virtual and physical bitmaps and initialize them
     
-    physical_memory = mmap(0, MEMSIZE, PROT_READ|PROT_WRITE, MAP_PRIVATE, -1, 0);
-    ppage_states = mmap(0, physical_pages, PROT_READ|PROT_WRITE, MAP_PRIVATE,-1,0);
-    vpage_states = mmap(0, virtual_pages, PROT_READ|PROT_WRITE, MAP_PRIVATE, -1, 0);
+    physical_memory = malloc(MEMSIZE);
+    ppage_states = malloc(physical_pages);
+    vpage_states = malloc(virtual_pages);
     for(int i = 0; i < physical_pages; i++){
         ppage_states[i] = 0;
     }
