@@ -215,6 +215,11 @@ void PutVal(void *va, void *val, int size) {
        than one page. Therefore, you may have to find multiple pages using Translate()
        function.*/
 
+    for(int i = 0; i < size / MEMSIZE; i++){
+        pte_t* paddr = Translate(NULL, va+i);
+        memcpy(paddr,val+i, MEMSIZE);
+    }
+
 }
 
 
@@ -225,7 +230,10 @@ void GetVal(void *va, void *val, int size) {
     "val" address. Assume you can access "val" directly by derefencing them.
     If you are implementing TLB,  always check first the presence of translation
     in TLB before proceeding forward */
-
+    for(int i = 0; i < size / MEMSIZE; i++){
+        pte_t* paddr = Translate(NULL, va+i);
+        memcpy(val+i, paddr, MEMSIZE);
+    }
 
 }
 
@@ -243,6 +251,34 @@ void MatMult(void *mat1, void *mat2, int size, void *answer) {
     load each element and perform multiplication. Take a look at test.c! In addition to
     getting the values from two matrices, you will perform multiplication and
     store the result to the "answer array"*/
-
+    int* M = malloc(size * size * sizeof(int));
+    int* N = malloc(size * size * sizeof(int));
+    int* RES = malloc(size * size * sizeof(int));
+    int x,y=0;
+    for(int i = 0; i < size; i++){
+        for(int j = 0; j < size; j++){
+            int n1 = (unsigned int)mat1 + ((i * size * sizeof(int))) + (j * sizeof(int));
+            int n2 = (unsigned int)mat2 + ((i * size * sizeof(int))) + (j * sizeof(int));
+            GetVal((void*)n1, &x, sizeof(int));
+            GetVal((void*)n2, &y, sizeof(int));
+            M[size*i+j]=x;
+            N[size*i+j]=y;
+        }
+    }
+    for(int i = 0; i < size; i++){
+        for(int j =0; j < size; j++){
+            for(int k = 0; k < size; k++){
+                int n1 = M[i*size*k];
+                int n2 = N[i*size+j];
+                RES[i*size+j] += n1*n2;
+            }
+        }
+    }
+    for(int i = 0; i < size; i++){
+        for(int j = 0; j < size; j++){
+            int n1 = (unsigned int) RES + ((i * size * sizeof(int))) + (j * sizeof(int));
+            PutVal((void*)n1, (void*)&RES[i*size+j], sizeof(int));
+        }
+    }
 
 }

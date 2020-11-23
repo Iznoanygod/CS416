@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 #include <sys/mman.h>
 
 //Assume the address space is 32 bits, so the max memory size is 4GB
