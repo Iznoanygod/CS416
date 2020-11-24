@@ -28,13 +28,13 @@ typedef unsigned long pde_t;
 #define TLB_SIZE 120
 
 //Structure to represents TLB
-struct tlb {
 
-    //Assume your TLB is a direct mapped TLB of TBL_SIZE (entries)
-    // You must also define wth TBL_SIZE in this file.
-    //Assume each bucket to be 4 bytes
+struct tlb {
+    void * py;
+    void * vs; 
+    int position; 
 };
-struct tlb tlb_store;
+// struct tlb* tlblist[TLB_SIZE];
 
 
 void SetPhysicalMem();
