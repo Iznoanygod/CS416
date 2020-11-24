@@ -243,7 +243,7 @@ void myfree(void *va, int size) {
     int frees = ((int)paddr - (unsigned int)physical_memory)/PGSIZE;
     int nfrees = size / PGSIZE + 1;
     for(int i = frees, j = 0; j < nfrees; i++,j++){
-        vpage_states[frees] = 0;
+        vpage_states[i] = 0;
     }
 
     int addr = (unsigned long int)paddr;
