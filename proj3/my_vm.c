@@ -325,7 +325,6 @@ void MatMult(void *mat1, void *mat2, int size, void *answer) {
             }
         }
     }
-    printf("didnt break yet\n");
     for(int i = 0; i < size; i++){
         for(int j = 0; j < size; j++){
             int n1 = (unsigned int) answer + ((i * size * sizeof(int))) + (j * sizeof(int));
