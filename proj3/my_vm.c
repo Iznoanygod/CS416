@@ -12,6 +12,10 @@ static char* physical_memory;
 static pde_t* pagedir[1024][1024];
 
 static int nextp = -1;
+static int misses=0;
+static int count=0;
+
+struct tlb* tlblist[TLB_SIZE];
 
 int bitMask(int n, int k, int p){
     return (((1 << k) -1) & (n >> (p-1)));
@@ -45,7 +49,35 @@ void SetPhysicalMem() {
  */
 int add_TLB(void *va, void *pa)
 {
-
+    if (tlblist[0]==NULL) {
+        tlblist[0]=malloc(sizeof (struct tlb));
+        tlblist[0]->vs = malloc(sizeof (void*));
+        tlblist[0]->py = malloc(sizeof (void*));
+        tlblist[0]->vs=va;
+        tlblist[0]->py=pa;
+        tlblist[0]->position=count;
+        return 0;
+    }
+    int min=tlblist[0]->position;
+    int minindex=0;
+    for (int i=0;i<TLB_SIZE;i++){
+        if (tlblist[i]==NULL){
+            tlblist[i]=malloc(sizeof (struct tlb));
+            tlblist[i]->vs = malloc(sizeof (void*));
+            tlblist[i]->py = malloc(sizeof (void*));
+            tlblist[i]->vs=va;
+            tlblist[i]->py=pa;
+            tlblist[i]->position=count;
+            return 0;
+        }
+        if (tlblist[i]->position < min) {
+            min=tlblist[i]->position;
+            minindex=i;
+        }
+    }
+    tlblist[minindex]->vs=va;
+    tlblist[minindex]->py=pa;
+    tlblist[minindex]->position=count;
     /*Part 2 HINT: Add a virtual to physical page translation to the TLB */
 
     return -1;
@@ -58,8 +90,17 @@ int add_TLB(void *va, void *pa)
  * Feel free to extend this function and change the return type.
  */
 pte_t * check_TLB(void *va) {
-
     /* Part 2: TLB lookup code here */
+    for (int i=0;i<TLB_SIZE;i++){
+        if (tlblist[i]==NULL) {
+            return NULL;
+        }
+        if (tlblist[i]->vs==va){
+            tlblist[i]->position=count;
+            return tlblist[i]->py; 
+        }
+    }
+    return NULL;
 
 }
 
@@ -70,13 +111,11 @@ pte_t * check_TLB(void *va) {
  */
 void print_TLB_missrate()
 {
-    double miss_rate = 0;
+    double missed = (double)misses;
+    double total = (double)count;
+    double miss_rate = missed/total*100;
 
     /*Part 2 Code here to calculate and print the TLB miss rate*/
-
-
-
-
     fprintf(stderr, "TLB miss rate %lf \n", miss_rate);
 }
 
@@ -90,10 +129,18 @@ pte_t * Translate(pde_t *pgdir, void *va) {
     //2nd-level-page table index using the virtual address.  Using the page
     //directory index and page table index get the physical address
     
+    count++;
+    if (check_TLB(va)) {
+
+        return check_TLB(va);
+    }
+
     uintptr_t addr = (uintptr_t) va;
     int i = bitMask(addr, 10, 23);
     int j = bitMask(addr, 10, 13);
     pde_t* retv = pagedir[i][j];
+    add_TLB(va, retv);
+    misses++;
     return retv;
 
     //If translation not successfull
@@ -115,9 +162,10 @@ int PageMap(pde_t *pgdir, void *va, void *pa)
     virtual to physical mapping */
     uintptr_t i = (uintptr_t)pgdir;
     uintptr_t j = (uintptr_t)va;
-    if(pagedir[i][j] == NULL)
+    if(pagedir[i][j] == NULL) {
         pagedir[i][j] = pa;
-    else{
+        add_TLB(va, pa);
+    } else{
         printf("Mapping Already Exists\n");
         return 0;
     }
