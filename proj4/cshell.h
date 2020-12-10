@@ -6,6 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
+#include <setjmp.h>
 
 #define PTHSIZE 512
 #define LINESIZE 512
