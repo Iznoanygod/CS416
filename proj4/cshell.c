@@ -29,7 +29,6 @@ int main(){
 }
 
 void readLine(char* buffer){
-    //read a whole ass line
     int i = 0;
     while(1){
         char in = getchar();
@@ -41,9 +40,8 @@ void readLine(char* buffer){
         i++;
     }
 }
-int countDelimiters(char* line){
+int countDelimiters(char* line, char* delim){
     char temp[LINESIZE];
-    char delim[] = ">|>>";
     strcpy(temp, line);
     int i = 0;
     char* token = strtok(temp, delim);
@@ -51,8 +49,9 @@ int countDelimiters(char* line){
         i++;
         token = strtok(NULL, delim);
     }
-    return i;
+    return i-1;
 }
+
 void shellLoop(){
     do{
         if(sigsetjmp(env, SIGINT) == 86){
@@ -65,19 +64,40 @@ void shellLoop(){
     }while(running);
 }
 
-void toCommandArgs(char* line, char* command, char** args){
-    
+void toCommandArgs(char* cline, char* command, char** args){
+    char line[LINESIZE];
+    strcpy(line, cline);
+    char* exec = strtok(line, " ");
+    strcpy(command, exec);
+    strcpy(args[0], exec);
+    int i = 1;
+    char* token = strtok(NULL, " ");
+    while(token != NULL){
+        strcpy(args[i], token);
+        i++;
+        token = strtok(NULL, " ");
+    }
+    args[i] = NULL;
 }
 
 void shellExecute(char* line){
-    int delimCount = countDelimiters(line);
-    char** lineSep = malloc((delimCount + 1) * sizeof(char*));
-    char** pipeSep = malloc(delimCount * sizeof(char*));
-    for(int i = 0; i < delimCount+1; i++){
+    int pipeCount = countDelimiters(line, ">|>>");
+    char** lineSep = malloc((pipeCount + 1) * sizeof(char*));
+    char** pipeSep = malloc(pipeCount * sizeof(char*));
+    for(int i = 0; i < pipeCount+1; i++){
         lineSep[i] = malloc(sizeof(char) * LINESIZE);
     }
     seperateLines(line, lineSep, pipeSep);
+    //loop after here
     
+
+
+    int lineC = countDelimiters(lineSep[0], " ");
+    char command[LINESIZE];
+    char** args = malloc(sizeof(char*) * (lineC + 2));
+    for(int i = 0; i < lineC + 1; i++)
+        args[i]=malloc(LINESIZE);
+    toCommandArgs(lineSep[0], command, args);
 
 }
 
