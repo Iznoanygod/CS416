@@ -152,7 +152,7 @@ void shellExecute(char* line){
             continue;
         }
         if(!strcmp("csh-reload", command)){
-            execvp("./cshell", NULL);
+            execl("./cshell", NULL);
         }
         //set up pipe stuffs
         if(pipeCount != 0 && pipeCount != i && pipeSep[i][0] == '|'){
