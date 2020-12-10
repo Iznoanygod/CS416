@@ -5,8 +5,10 @@ void shellExecute(char* line);
 void seperateLines(char* line, char** chain, char** pipe);
 
 int isExec = 0;
+int childPID = 0;
 char running = 1;
 static jmp_buf env;
+static jmp_buf nenv;
 
 void printPrompt(){
     char path[PTHSIZE];
@@ -17,6 +19,12 @@ void printPrompt(){
 }
 
 void IntHandler(int signum) {
+    
+    if(isExec){
+        isExec = 0;
+        kill(childPID, SIGKILL);
+    
+    }
     siglongjmp(env, 86);
 }
 
@@ -55,6 +63,9 @@ int countDelimiters(char* line, char* delim){
 void shellLoop(){
     do{
         if(sigsetjmp(env, SIGINT) == 86){
+            printf("\n");
+        }
+        if(setjmp(nenv) == 85){
             printf("\n");
         }
         printPrompt();
@@ -188,6 +199,7 @@ void shellExecute(char* line){
             trunc = 1;
             pipe(outPipe);
         }
+        isExec = 1;
         int PID = fork();
         if(PID == 0){
             //child process
@@ -201,14 +213,16 @@ void shellExecute(char* line){
             printf("Error: command not found: %s\n", command);
             exit(0);
         }
-        wait(NULL);
+        childPID = PID;
+        waitpid(PID, NULL, 0);
+        isExec = 0;
         if(fileRedir){
             close(outPipe[WRITE]);
             char* fileP = strtok(lineSep[i+1], " ");
             int fd = open(fileP, O_CREAT | O_RDWR | ((trunc) ? O_TRUNC : O_APPEND), S_IRUSR | S_IWUSR);
             if(fd == -1){
                 printf("Error: cannot open file '%s'\n", fileP);
-                longjmp(env, 32);
+                longjmp(nenv, 32);
             }
             char buffer[512];
             int inByte = read(outPipe[READ], buffer, 512);
@@ -224,7 +238,7 @@ void shellExecute(char* line){
             for(int i = 0; i < pipeCount + 1; i++)
                 free(lineSep[i]);
             free(lineSep);
-            longjmp(env, 32);
+            longjmp(nenv, 32);
         }
         if(useIn){
             useIn = 0;
