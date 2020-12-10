@@ -178,7 +178,7 @@ void shellExecute(char* line){
             continue;
         }
         if(!strcmp("csh-reload", command)){
-            execl("./cshell", NULL);
+            execl("./cshell", "", NULL);
         }
         //set up pipe stuffs
         if(useIn)
