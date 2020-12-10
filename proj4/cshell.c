@@ -2,6 +2,7 @@
 
 void shellLoop();
 void shellExecute(char* line);
+void seperateLines(char* line, char** chain, char** pipe);
 
 int isExec = 0;
 char running = 1;
@@ -29,6 +30,28 @@ int main(){
 
 void readLine(char* buffer){
     //read a whole ass line
+    int i = 0;
+    while(1){
+        char in = getchar();
+        if(in == EOF || in == '\n'){
+            buffer[i] = '\0';
+            return;
+        }
+        buffer[i] = in;
+        i++;
+    }
+}
+int countDelimiters(char* line){
+    char temp[LINESIZE];
+    char delim[] = ">|>>";
+    strcpy(temp, line);
+    int i = 0;
+    char* token = strtok(temp, delim);
+    while(token != NULL){
+        i++;
+        token = strtok(NULL, delim);
+    }
+    return i;
 }
 void shellLoop(){
     do{
@@ -42,7 +65,50 @@ void shellLoop(){
     }while(running);
 }
 
-void shellExecute(char* line){
+void toCommandArgs(char* line, char* command, char** args){
     
 }
 
+void shellExecute(char* line){
+    int delimCount = countDelimiters(line);
+    char** lineSep = malloc((delimCount + 1) * sizeof(char*));
+    char** pipeSep = malloc(delimCount * sizeof(char*));
+    for(int i = 0; i < delimCount+1; i++){
+        lineSep[i] = malloc(sizeof(char) * LINESIZE);
+    }
+    seperateLines(line, lineSep, pipeSep);
+    
+
+}
+
+void seperateLines(char* line, char** chain, char** pipe){
+    char temp[LINESIZE];
+    strcpy(temp, line);
+    char* token = strtok(temp, ">|>>");
+    int i = 0;
+    while(token != NULL){
+        strcpy(chain[i],token);
+        i++;
+        token = strtok(NULL, ">|>>");
+    }
+    int counter = 0;
+    i = 0;
+    while(line[i] != '\0'){
+        if(line[i] == '|'){
+            pipe[counter] = "|";
+            counter++;
+        }
+        if(line[i] == '>'){
+            i++;
+            if(line[i] == '>'){
+                pipe[counter] = ">>";
+                counter++;
+            }
+            else{
+                pipe[counter] = ">";
+                counter++;
+            }
+        }
+        i++;
+    }
+}
