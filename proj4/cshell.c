@@ -94,6 +94,10 @@ int isProper(char* cline){
         }
     }
     char line[LINESIZE];
+    
+    strcpy(line, cline);
+    if(strtok(line, " \t\n") == NULL)
+        return -1;
     strcpy(line, cline);
     char* saveptr;
     int cmd = 0;
@@ -111,8 +115,12 @@ int isProper(char* cline){
 }
 
 void shellExecute(char* line){
-    if(!isProper(line)){
+    int linestate = isProper(line);
+    if(!linestate){
         printf("Error: incomplete redirect\n");
+        return;
+    }
+    if(linestate == -1){
         return;
     }
     int pipeCount = countDelimiters(line, ";>|>>");
@@ -141,6 +149,13 @@ void shellExecute(char* line){
 
         //start parsing commands
         if(!strcmp("exit", command)){
+            free(pipeSep);
+            for(int i = 0; i < pipeCount + 1; i++)
+                free(lineSep[i]);
+            free(lineSep);
+            for(int i = 0; i < lineC + 1; i++)
+                free(args[i]);
+            free(args);
             running = 0;
             return;
         }
@@ -155,6 +170,8 @@ void shellExecute(char* line){
             execl("./cshell", NULL);
         }
         //set up pipe stuffs
+        if(useIn)
+            inPipe[READ] = outPipe[READ];
         if(pipeCount != 0 && pipeCount != i && pipeSep[i][0] == '|'){
             //pipe output
             useOut = 1;
@@ -170,9 +187,6 @@ void shellExecute(char* line){
             fileRedir = 1;
             trunc = 1;
             pipe(outPipe);
-        }
-        if(useIn){
-            inPipe[READ] = outPipe[READ];
         }
         int PID = fork();
         if(PID == 0){
@@ -203,6 +217,13 @@ void shellExecute(char* line){
                 inByte = read(outPipe[READ], buffer, 512);
             }
             close(outPipe[READ]);
+            free(pipeSep);
+            for(int i = 0; i < lineC+1; i++)
+                free(args[i]);
+            free(args);
+            for(int i = 0; i < pipeCount + 1; i++)
+                free(lineSep[i]);
+            free(lineSep);
             longjmp(env, 32);
         }
         if(useIn){
@@ -214,11 +235,14 @@ void shellExecute(char* line){
             close(outPipe[WRITE]);
             useIn = 1;
         }
-        if(fileRedir){
-            longjmp(env, 32);
-        }
+        for(int i = 0; i < lineC+1; i++)
+            free(args[i]);
+        free(args);
     }
-
+    free(pipeSep);
+    for(int i = 0; i < pipeCount + 1; i++)
+        free(lineSep[i]);
+    free(lineSep);
 }
 
 void seperateLines(char* line, char** chain, char** pipe){
