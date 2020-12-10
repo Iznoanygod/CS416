@@ -7,8 +7,12 @@
 #include <unistd.h>
 #include <signal.h>
 #include <setjmp.h>
+#include <sys/wait.h>
+#include <fcntl.h>
 
 #define PTHSIZE 512
 #define LINESIZE 512
+
+enum{READ = 0, WRITE = 1};
 
 #endif
